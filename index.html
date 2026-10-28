@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaffSync HRM - Admin Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { @apply border-indigo-600 text-indigo-600 font-semibold; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-md shadow-indigo-200">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900 tracking-tight">StaffSync <span class="text-indigo-600">HRM</span></h1>
+                        <p class="text-xs text-slate-500">Live Management Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        <span class="w-2 h-2 mr-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Backend Connected
+                    </span>
+                    <button onclick="fetchAllData()" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="Refresh All Data">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Metrics Overview Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-4 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <i class="fa-solid fa-user-tie text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Total Staff</p>
+                    <h3 id="stat-total-employees" class="text-2xl font-bold text-slate-900">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-4 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <i class="fa-solid fa-clipboard-user text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Attendance Logged</p>
+                    <h3 id="stat-attendance-count" class="text-2xl font-bold text-slate-900">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-4 bg-amber-50 text-amber-600 rounded-xl">
+                    <i class="fa-solid fa-plane-departure text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Leave Requests</p>
+                    <h3 id="stat-leaves-count" class="text-2xl font-bold text-slate-900">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation Header -->
+        <div class="border-b border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-4">
+            <nav class="flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('employees')" id="tab-btn-employees" class="tab-btn border-b-2 border-indigo-600 pb-4 text-indigo-600 font-semibold text-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-users text-base"></i>
+                    <span>Employees</span>
+                </button>
+                <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn border-b-2 border-transparent pb-4 text-slate-500 hover:text-slate-700 font-medium text-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-calendar-check text-base"></i>
+                    <span>Attendance</span>
+                </button>
+                <button onclick="switchTab('leaves')" id="tab-btn-leaves" class="tab-btn border-b-2 border-transparent pb-4 text-slate-500 hover:text-slate-700 font-medium text-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-business-time text-base"></i>
+                    <span>Leave Requests</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- TAB 1: EMPLOYEE MANAGEMENT -->
+        <section id="tab-employees" class="tab-content block space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                    <input type="text" id="employee-search" oninput="filterEmployees()" placeholder="Search employee by name, role, or department..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button onclick="openEmployeeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition shadow-sm">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Employee</span>
+                </button>
+            </div>
+
+            <!-- Employee List Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-slate-50 text-slate-600 uppercase font-semibold text-xs border-b border-slate-200">
+                            <tr>
+                                <th class="py-3.5 px-4">Name</th>
+                                <th class="py-3.5 px-4">Email</th>
+                                <th class="py-3.5 px-4">Department</th>
+                                <th class="py-3.5 px-4">Role</th>
+                                <th class="py-3.5 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-table-body" class="divide-y divide-slate-100 text-slate-700">
+                            <tr><td colspan="5" class="py-8 text-center text-slate-400">Loading employees...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: ATTENDANCE TRACKING -->
+        <section id="tab-attendance" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Mark Attendance Form -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-fit">
+                    <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+                        <span>Mark Attendance</span>
+                    </h3>
+                    <form id="attendance-form" onsubmit="handleMarkAttendance(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Employee</label>
+                            <select id="att-employee-select" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                <option value="">-- Choose Employee --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Status</label>
+                            <select id="att-status-select" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                <option value="Present">Present</option>
+                                <option value="Absent">Absent</option>
+                                <option value="Late">Late</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg transition shadow-sm flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Save Record</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Attendance Log Table -->
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Attendance History</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-slate-50 text-slate-600 uppercase font-semibold text-xs border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3.5 px-4">Employee</th>
+                                    <th class="py-3.5 px-4">Department</th>
+                                    <th class="py-3.5 px-4">Status</th>
+                                    <th class="py-3.5 px-4">Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="4" class="py-8 text-center text-slate-400">Loading attendance...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: LEAVE REQUESTS -->
+        <section id="tab-leaves" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Submit Leave Form -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-fit">
+                    <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-paper-plane text-indigo-600"></i>
+                        <span>New Leave Request</span>
+                    </h3>
+                    <form id="leave-form" onsubmit="handleCreateLeave(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Employee</label>
+                            <select id="leave-employee-select" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                <option value="">-- Choose Employee --</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Start Date</label>
+                                <input type="date" id="leave-start-date" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">End Date</label>
+                                <input type="date" id="leave-end-date" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Reason</label>
+                            <textarea id="leave-reason" rows="3" required placeholder="Reason for leave..." class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg transition shadow-sm flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Submit Request</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Leave List Table -->
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-sm">Leave Requests Log</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-slate-50 text-slate-600 uppercase font-semibold text-xs border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3.5 px-4">Employee</th>
+                                    <th class="py-3.5 px-4">Dates</th>
+                                    <th class="py-3.5 px-4">Reason</th>
+                                    <th class="py-3.5 px-4">Status</th>
+                                    <th class="py-3.5 px-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leave-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="5" class="py-8 text-center text-slate-400">Loading requests...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Adding / Editing Employee -->
+    <div id="employee-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h3 id="modal-title" class="text-lg font-bold text-slate-900">Add New Employee</h3>
+                <button onclick="closeEmployeeModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="employee-form" onsubmit="handleEmployeeSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="emp-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full Name</label>
+                    <input type="text" id="emp-name" required placeholder="John Doe" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email Address</label>
+                    <input type="email" id="emp-email" required placeholder="john@example.com" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Department</label>
+                        <input type="text" id="emp-department" required placeholder="Engineering" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Role</label>
+                        <input type="text" id="emp-role" required placeholder="Developer" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="pt-4 flex space-x-3">
+                    <button type="button" onclick="closeEmployeeModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm py-2.5 rounded-lg transition">Cancel</button>
+                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg transition shadow-sm">Save Employee</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        // Global State
+        let state = {
+            employees: [],
+            attendance: [],
+            leaves: []
+        };
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchAllData();
+        });
+
+        // Fetch all resource data simultaneously
+        async function fetchAllData() {
+            try {
+                await Promise.all([fetchEmployees(), fetchAttendance(), fetchLeaves()]);
+                populateDropdowns();
+                updateStats();
+            } catch (err) {
+                showToast('Failed to connect to backend APIs', 'error');
+            }
+        }
+
+        // --- EMPLOYEES API & RENDER ---
+        async function fetchEmployees() {
+            try {
+                const res = await fetch(`${API_BASE}/employees`);
+                state.employees = await res.json();
+                renderEmployees(state.employees);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderEmployees(list) {
+            const tbody = document.getElementById('employee-table-body');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No employees registered yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(emp => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-3.5 px-4 font-semibold text-slate-900">${escapeHtml(emp.name)}</td>
+                    <td class="py-3.5 px-4">${escapeHtml(emp.email)}</td>
+                    <td class="py-3.5 px-4"><span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-medium">${escapeHtml(emp.department)}</span></td>
+                    <td class="py-3.5 px-4">${escapeHtml(emp.role)}</td>
+                    <td class="py-3.5 px-4 text-right space-x-2">
+                        <button onclick="editEmployee('${emp._id}')" class="text-indigo-600 hover:text-indigo-800 p-1.5 rounded-lg hover:bg-indigo-50"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteEmployee('${emp._id}')" class="text-rose-600 hover:text-rose-800 p-1.5 rounded-lg hover:bg-rose-50"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterEmployees() {
+            const query = document.getElementById('employee-search').value.toLowerCase();
+            const filtered = state.employees.filter(emp => 
+                emp.name.toLowerCase().includes(query) ||
+                emp.email.toLowerCase().includes(query) ||
+                emp.department.toLowerCase().includes(query) ||
+                emp.role.toLowerCase().includes(query)
+            );
+            renderEmployees(filtered);
+        }
+
+        async function handleEmployeeSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('emp-id').value;
+            const payload = {
+                name: document.getElementById('emp-name').value,
+                email: document.getElementById('emp-email').value,
+                department: document.getElementById('emp-department').value,
+                role: document.getElementById('emp-role').value
+            };
+
+            const url = id ? `${API_BASE}/employees/${id}` : `${API_BASE}/employees`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Operation failed');
+                
+                showToast(id ? 'Employee updated!' : 'Employee added successfully!', 'success');
+                closeEmployeeModal();
+                fetchAllData();
+            } catch (err) {
+                showToast('Error saving employee record', 'error');
+            }
+        }
+
+        function editEmployee(id) {
+            const emp = state.employees.find(e => e._id === id);
+            if (!emp) return;
+            document.getElementById('emp-id').value = emp._id;
+            document.getElementById('emp-name').value = emp.name;
+            document.getElementById('emp-email').value = emp.email;
+            document.getElementById('emp-department').value = emp.department;
+            document.getElementById('emp-role').value = emp.role;
+            document.getElementById('modal-title').innerText = 'Edit Employee';
+            document.getElementById('employee-modal').classList.remove('hidden');
+        }
+
+        async function deleteEmployee(id) {
+            if (!confirm('Are you sure you want to delete this employee?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/employees/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Employee deleted', 'success');
+                    fetchAllData();
+                }
+            } catch (err) {
+                showToast('Failed to delete employee', 'error');
+            }
+        }
+
+        // --- ATTENDANCE API & RENDER ---
+        async function fetchAttendance() {
+            try {
+                const res = await fetch(`${API_BASE}/attendance`);
+                state.attendance = await res.json();
+                renderAttendance(state.attendance);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderAttendance(list) {
+            const tbody = document.getElementById('attendance-table-body');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">No attendance marked yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(item => {
+                const empName = item.employeeId?.name || 'Unknown';
+                const empDept = item.employeeId?.department || '-';
+                const statusBadge = getStatusBadge(item.status);
+                const dateStr = new Date(item.date).toLocaleString();
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3.5 px-4 font-semibold text-slate-900">${escapeHtml(empName)}</td>
+                        <td class="py-3.5 px-4 text-slate-500">${escapeHtml(empDept)}</td>
+                        <td class="py-3.5 px-4">${statusBadge}</td>
+                        <td class="py-3.5 px-4 text-xs text-slate-400">${dateStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function handleMarkAttendance(e) {
+            e.preventDefault();
+            const payload = {
+                employeeId: document.getElementById('att-employee-select').value,
+                status: document.getElementById('att-status-select').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Attendance logged!', 'success');
+                    fetchAttendance();
+                    updateStats();
+                }
+            } catch (err) {
+                showToast('Failed to log attendance', 'error');
+            }
+        }
+
+        // --- LEAVES API & RENDER ---
+        async function fetchLeaves() {
+            try {
+                const res = await fetch(`${API_BASE}/leaves`);
+                state.leaves = await res.json();
+                renderLeaves(state.leaves);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderLeaves(list) {
+            const tbody = document.getElementById('leave-table-body');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No leave requests found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(item => {
+                const empName = item.employeeId?.name || 'Unknown';
+                const dates = `${new Date(item.startDate).toLocaleDateString()} - ${new Date(item.endDate).toLocaleDateString()}`;
+                const statusBadge = getStatusBadge(item.status);
+
+                const actionBtns = item.status === 'Pending' ? `
+                    <button onclick="updateLeaveStatus('${item._id}', 'Approved')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg text-xs font-semibold mr-1">Approve</button>
+                    <button onclick="updateLeaveStatus('${item._id}', 'Rejected')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 p-1.5 rounded-lg text-xs font-semibold">Reject</button>
+                ` : `<span class="text-xs text-slate-400">Processed</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3.5 px-4 font-semibold text-slate-900">${escapeHtml(empName)}</td>
+                        <td class="py-3.5 px-4 text-xs font-medium text-slate-600">${dates}</td>
+                        <td class="py-3.5 px-4 text-xs text-slate-500">${escapeHtml(item.reason)}</td>
+                        <td class="py-3.5 px-4">${statusBadge}</td>
+                        <td class="py-3.5 px-4 text-right">${actionBtns}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function handleCreateLeave(e) {
+            e.preventDefault();
+            const payload = {
+                employeeId: document.getElementById('leave-employee-select').value,
+                startDate: document.getElementById('leave-start-date').value,
+                endDate: document.getElementById('leave-end-date').value,
+                reason: document.getElementById('leave-reason').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/leaves`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Leave request submitted!', 'success');
+                    document.getElementById('leave-form').reset();
+                    fetchLeaves();
+                    updateStats();
+                }
+            } catch (err) {
+                showToast('Failed to submit leave request', 'error');
+            }
+        }
+
+        async function updateLeaveStatus(id, status) {
+            try {
+                const res = await fetch(`${API_BASE}/leaves/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (res.ok) {
+                    showToast(`Leave status updated to ${status}`, 'success');
+                    fetchLeaves();
+                }
+            } catch (err) {
+                showToast('Failed to update leave status', 'error');
+            }
+        }
+
+        // --- HELPERS & UTILITIES ---
+        function populateDropdowns() {
+            const attSelect = document.getElementById('att-employee-select');
+            const leaveSelect = document.getElementById('leave-employee-select');
+
+            const options = state.employees.map(e => `<option value="${e._id}">${escapeHtml(e.name)} (${escapeHtml(e.department)})</option>`).join('');
+            
+            attSelect.innerHTML = `<option value="">-- Choose Employee --</option>` + options;
+            leaveSelect.innerHTML = `<option value="">-- Choose Employee --</option>` + options;
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total-employees').innerText = state.employees.length;
+            document.getElementById('stat-attendance-count').innerText = state.attendance.length;
+            document.getElementById('stat-leaves-count').innerText = state.leaves.length;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'text-indigo-600', 'font-semibold');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.remove('border-transparent', 'text-slate-500');
+            activeBtn.classList.add('border-indigo-600', 'text-indigo-600', 'font-semibold');
+        }
+
+        function openEmployeeModal() {
+            document.getElementById('employee-form').reset();
+            document.getElementById('emp-id').value = '';
+            document.getElementById('modal-title').innerText = 'Add New Employee';
+            document.getElementById('employee-modal').classList.remove('hidden');
+        }
+
+        function closeEmployeeModal() {
+            document.getElementById('employee-modal').classList.add('hidden');
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'Present': return `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-medium">Present</span>`;
+                case 'Absent': return `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-medium">Absent</span>`;
+                case 'Late': return `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-medium">Late</span>`;
+                case 'Approved': return `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-medium">Approved</span>`;
+                case 'Rejected': return `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-medium">Rejected</span>`;
+                default: return `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-medium">Pending</span>`;
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? 'bg-slate-900 text-white' : 'bg-rose-600 text-white';
+            toast.className = `${bg} px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center space-x-2 pointer-events-auto transition duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
