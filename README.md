@@ -1,62 +1,100 @@
 StaffSync HRM — Human Resource Management System
 
-StaffSync HRM is a Human Resource Management application designed to simplify employee management and streamline essential HR operations through a centralized dashboard.
+StaffSync HRM is a web-based Human Resource Management application designed to organize employee information and support essential HR operations through a centralized dashboard.
 
 Features
 
-- HR Dashboard: A centralized interface for accessing HR information.
-- Employee Management: Organize and manage employee-related information.
-- Modular Structure: Separate configuration, models, and routes for better code organization.
-- Server-Side Application: A Node.js server entry point for handling application functionality.
+- HR Dashboard: A centralized interface for accessing HR-related information.
+- Employee Management: Employee-related data organization.
+- Attendance Management: Dedicated attendance-related models and routes.
+- Leave Management: Dedicated leave-related models and routes.
+- Modular Backend: Organized configuration, models, and routes.
 
-Tech Stack
+Technology Stack
 
-- Backend: Node.js, Express.js (to be verified)
-- Database: MongoDB (to be verified)
-- Frontend: HTML, CSS, JavaScript (to be verified)
+Backend
+
+- Node.js
+- Express.js
+
+Database
+
+- MongoDB
+- Mongoose
+
+Frontend
+
+- HTML
+- CSS
+- JavaScript
+
+Additional Dependencies
+
+- CORS
+- dotenv
 
 Project Structure
 
 StaffSync-HRM/
 ├── config/
 ├── models/
+│   ├── attendance.js
+│   ├── Employee.js
+│   └── Leave.js
 ├── routes/
+│   ├── attendanceRoutes.js
+│   ├── employeeRoutes.js
+│   └── leaveRoutes.js
+├── .env
 ├── .gitignore
-├── StaffSync HRM Dashboard.html
 ├── server.js
-└── README.md
+├── index.html
+├── StaffSync HRM Dashboard.html
+├── package.json
+└── package-lock.json
 
 Getting Started
 
 Prerequisites
 
-Install Node.js and npm. If the project uses MongoDB, configure a MongoDB database as well.
+- Node.js and npm
+- MongoDB database access
 
 Installation
 
-1. Clone this repository:
+1. Clone the repository:
    
-   git clone YOUR_REPOSITORY_URL
+   git clone https://github.com/Akankshash666-rgb/StaffSync-HRM.git
 
-2. Navigate to the project directory:
+2. Navigate to the backend directory if the project is organized as shown in the repository:
    
-   cd StaffSync-HRM
+   cd StaffSync-HRM/server
 
-3. Install the project dependencies:
+3. Install dependencies:
    
    npm install
 
-4. Configure the required environment variables and database connection.
+4. Configure the required environment variables in ".env", including the database connection details expected by the application.
 
-5. Start the application using the appropriate script defined in "package.json".
+5. Start the backend:
+   
+   node server.js
+   
+   Ensure that the server configuration and required environment variables are set correctly before starting the application.
 
-Future Improvements
+Security
 
-- Improve dashboard usability and responsiveness.
-- Strengthen input validation and error handling.
-- Expand documentation and testing.
-- Add deployment instructions and project screenshots.
+- Keep environment variables and database credentials private.
+- Never commit ".env" files containing secrets.
+- Validate user input and handle errors appropriately.
+
+Future Enhancements
+
+- Improve dashboard responsiveness and usability.
+- Add automated tests.
+- Expand validation and error handling.
+- Deploy the application for online access.
 
 Author
 
-Developed as a project to explore and build practical skills in web application development.
+Developed as a practical web development project focused on Human Resource Management.
